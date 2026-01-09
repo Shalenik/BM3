@@ -1,10 +1,10 @@
 ---
-title: "Plotting Example Data"
-author: "BM3 Package"
+title: "Usage Example - New York"
+author: "FACT Package"
 date: "2026-01-09"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Plotting Example Data}
+  %\VignetteIndexEntry{Usage Example - New York}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
