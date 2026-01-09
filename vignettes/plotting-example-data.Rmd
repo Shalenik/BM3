@@ -1,0 +1,82 @@
+---
+title: "Plotting Example Data"
+author: "BM3 Package"
+date: "2026-01-09"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Plotting Example Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+library(BM3)
+library(ggplot2)
+```
+
+# Introduction
+
+This vignette demonstrates how to load and plot example data included in the BM3 package.
+
+# Load Example Data
+
+```{r load-data}
+climate_models <- readRDS(system.file("data", "climate_models.rds", package = "BM3"))
+hadcrut5_annual <- readRDS(system.file("data", "hadcrut5_annual.rds", package = "BM3"))
+```
+
+# Plot Example: Climate Models and Observations
+
+```{r plot-climate-models}
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+scenarios <- c("z126c", "z245c", "z585c")
+titles <- c("SSP 1-2.6", "SSP 2-4.5", "SSP 5-8.5")
+
+for (i in seq_along(scenarios)) {
+  mat <- climate_models[[scenarios[i]]]
+  matplot(1:nrow(mat), mat, type = "l", lty = 1, col = "black",
+          xlab = "Year", ylab = "Value", main = titles[i])
+  # Add hadcrut5_annual as red dots for overlapping years
+  n_hadcrut <- length(hadcrut5_annual)
+  points(1:n_hadcrut, hadcrut5_annual, col = "red", pch = 16, cex = 0.5)
+  legend("topright", legend = c("Climate Models", "HadCRUT5 Observations"),
+         col = c("black", "red"), lty = c(1, NA), pch = c(NA, 16), cex = 0.5, bty = "n")
+}
+```
+
+# Running the Algorithm
+
+```{r run-algorithm}
+results = list()
+for (i in seq_along(scenarios)) {
+  B <- BM3(
+          Y = climate_models[[i]], z = hadcrut5_annual,
+          T = 251, T1 = 1, T2 = 173,
+          H = 2, iseed = 1, J = 6, nsim = 100
+      )
+  results[[scenarios[i]]] <- B
+}
+#devtools::install(build_vignettes = TRUE)
+#browseVignettes("BM3")
+```
+
+# View Results
+
+```{r plot-results}
+post <- posterior_sample(results[[1]])
+print(dim(post))
+
+for (i in seq_along(scenarios)) {
+  mat <- climate_models[[scenarios[i]]]
+  matplot(1:nrow(mat), mat, type = "l", lty = 1, col = "black",
+          xlab = "Year", ylab = "Value", main = titles[i])
+  # Add hadcrut5_annual as red dots for overlapping years
+  n_hadcrut <- length(hadcrut5_annual)
+  points(1:n_hadcrut, hadcrut5_annual, col = "red", pch = 16, cex = 0.5)
+  # Add posterior curves
+  post <- posterior_sample(results[[scenarios[i]]])
+  matlines(1:ncol(post), t(post), col = "blue")
+  legend("topright", legend = c("Climate Models", "HadCRUT5 Observations", "Posterior Samples"),
+         col = c("black", "red","blue"), lty = c(1, NA,1), pch = c(NA, 16,NA), cex = 0.5, bty = "n")
+}
+```

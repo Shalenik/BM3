@@ -65,99 +65,115 @@ BM3 <- function(
     for (isim in 1:nsim) {
         if (isim %% 500 == 0) cat("Iteration", isim, "\n")
 
-        # Update gamma (per factor h)
+        # --- Update gamma ---
         for (h in 1:H) {
             c1 <- phiet[h] * prod(del[1:h])
-            A  <- diag(mga, J) + c1 * SXX
-            b  <- c1 * t(X) %*% U[, h]
+            A <- diag(mga, J) + c1 * SXX
+            b <- c1 * t(X) %*% U[, h]
             gamma[, h] <- mvn(A, b, J)
         }
+        # gamma should be 6x2
         gamma_samples[isim, , ] <- gamma
 
-        # Update beta (k=1: obs on [T1:T2]; k>=2: models on 1..T)
+        # --- Update beta ---
         for (k in 1:M) {
-            Uk <- if (k == 1) cbind(1, U[T1:T2, , drop = FALSE]) else cbind(1, U)
-            A  <- diag(mbe, H + 1L) + phiep[k] * t(Uk) %*% Uk
-            b  <- phiep[k] * t(Uk) %*% (if (k == 1) z else Y[, k - 1L])
-            beta[k, ] <- mvn(A, b, H + 1L)
+            Uk <- if (k == 1) cbind(1, U[T1:T2, ]) else cbind(1, U)
+            A <- diag(mbe, H + 1) + phiep[k] * t(Uk) %*% Uk
+            b <- phiep[k] * t(Uk) %*% (if (k == 1) z else Y[, k - 1])
+            beta[k, ] <- mvn(A, b, H + 1)
         }
+        # beta should be 16x3
         beta_samples[isim, , ] <- beta
 
-        # Update U (per factor h)
+        # --- Update U ---
         for (h in 1:H) {
+            # Precision matrix Aprior: A = c1*I
             c1 <- phiet[h] * prod(del[1:h])
-            A  <- diag(1, T) * c1
+            A <- diag(1, T) * c1
+
+            # Add contributions to A from CMIP and Observed
             for (k in 2:M) {
-                A <- A + phiep[k] * beta[k, h + 1L]^2 * diag(1, T)
+                A <- A + phiep[k] * beta[k, h + 1]^2 * diag(1, T)
             }
-            A <- A + phiep[1] * beta[1, h + 1L]^2 * E0TE0
+            A <- A + phiep[1] * beta[1, h + 1]^2 * E0TE0
 
-            U_obs_other    <- if (H > 1) U[T1:T2, -h, drop = FALSE] else matrix(0, T2 - T1 + 1L, 0)
-            beta_obs_other <- if (H > 1) matrix(beta[1, -c(1, h + 1L)], ncol = 1) else matrix(0, 0, 1)
-            ytil_z <- z - beta[1, 1] - as.vector(U_obs_other %*% beta_obs_other)
+            # Contribution from observed data (z)
+            # Columns of U excluding the h-th factor (if H > 1)
+            U_obs_other <- if (H > 1) U[T1:T2, -h, drop = FALSE] else matrix(0, T2 - T1 + 1, 0)
+            # Corresponding beta weights, excluding intercept and h-th factor
+            beta_obs_other <- if (H > 1) beta[1, -c(1, h + 1)] else numeric(0)
+            # Compute residual: z minus fixed intercept beta[1,1] and contributions from other factors
+            #   ytil_z ≈ z - (intercept + all other factor contributions)
+            ytil_z <- z - beta[1, 1] - U_obs_other %*% beta_obs_other
 
+            # Start b with prior term: c1 * X * gamma
             b <- c1 * X %*% gamma[, h]
-            b <- b + phiep[1] * beta[1, h + 1L] * t(E0) %*% ytil_z
+            # Add contribution from observations:
+            #   t(E0) %*% residuals = transpose design matrix times residuals
+            b <- b + phiep[1] * beta[1, h + 1] * t(E0) %*% ytil_z
 
+
+            # Contribution from climate models (Y)
             for (k in 2:M) {
-                U_mod_other    <- if (H > 1) U[, -h, drop = FALSE] else matrix(0, T, 0)
-                beta_mod_other <- if (H > 1) matrix(beta[k, -c(1, h + 1L)], ncol = 1) else matrix(0, 0, 1)
-                ytil_Y <- Y[, k - 1L] - beta[k, 1] - as.vector(U_mod_other %*% beta_mod_other)
-                b <- b + phiep[k] * beta[k, h + 1L] * ytil_Y
+                U_mod_other <- if (H > 1) U[, -h, drop = FALSE] else matrix(0, T, 0)
+                beta_mod_other <- if (H > 1) beta[k, -c(1, h + 1)] else numeric(0)
+                # Compute residual for model k: observed model minus expected
+                ytil_Y <- Y[, k - 1] - beta[k, 1] - U_mod_other %*% beta_mod_other
+
+                b <- b + phiep[k] * beta[k, h + 1] * ytil_Y
             }
 
+            # Sample the h-th latent factor column from its conditional posterior:
+            #   Normal(A^{-1} * b, A^{-1})
             U[, h] <- mvn(A, b, T)
         }
+
+        # U should be 251x2
         U_samples[isim, , ] <- U
 
-        # Update phiet (factor precisions)
+        # --- Update phiet ---
         for (h in 1:H) {
             resid <- U[, h] - X %*% gamma[, h]
             scale <- prod(del[1:h])
             shape <- aet + T / 2
-            rate  <- sum((resid^2) * scale) / 2 + bet
-            phiet[h] <- stats::rgamma(1, shape = shape, rate = rate)
+            rate <- sum((resid^2) * scale) / 2 + bet
+            phiet[h] <- rgamma(1, shape = shape, rate = rate)
         }
 
-        # Update del (global shrinkage)
+        # --- Update del ---
         del <- update_del(U, X, gamma, phiet, del, a1, a2)
 
-        # Update phiep (obs + all models)
-        phiep[1] <- update_phiep1(z, U[T1:T2, , drop = FALSE], beta[1, ], aep, bep)
+        # --- Update phiep ---
+        phiep[1] <- update_phiep1(z, U[T1:T2, ], beta[1, ], aep, bep)
         for (k in 2:M) {
-            phiep[k] <- update_phiepk(Y[, k - 1L], U, beta[k, ], aep, bep)
+            phiep[k] <- update_phiepk(Y[, k - 1], U, beta[k, ], aep, bep)
         }
         phiep_samples[isim, ] <- phiep
 
-        # Simple posterior replicate + record intercept
+        # --- Generate ysim ---
         ysim[isim, ] <- c(phiep[1], beta[1, 1] + X %*% gamma %*% beta[1, -1])
         beta0.sim[isim] <- beta[1, 1]
 
-        # Deviance (negative twice log-likelihood)
-        loglik <- sum(stats::dnorm(
-            z,
-            mean = cbind(1, U[T1:T2, , drop = FALSE]) %*% beta[1, ],
-            sd   = sqrt(1 / phiep[1]),
-            log  = TRUE
+        # --- Deviance ---
+        loglik <- sum(dnorm(z,
+                            mean = cbind(1, U[T1:T2, ]) %*% beta[1, ],
+                            sd = sqrt(1 / phiep[1]), log = TRUE
         ))
         for (k in 2:M) {
-            loglik <- loglik + sum(stats::dnorm(
-                Y[, k - 1L],
-                mean = cbind(1, U) %*% beta[k, ],
-                sd   = sqrt(1 / phiep[k]),
-                log  = TRUE
+            loglik <- loglik + sum(dnorm(Y[, k - 1],
+                                         mean = cbind(1, U) %*% beta[k, ],
+                                         sd = sqrt(1 / phiep[k]), log = TRUE
             ))
         }
         deviances[isim] <- -2 * loglik
     }
 
-    # DIC summary (uses your existing dic.calculations())
     DIC <- dic.calculations(
         X, Y, z, gamma_samples, beta_samples,
         phiep_samples, U_samples, deviances, T1, T2
     )
 
-    list(
+    return(list(
         X = X,
         ysim = ysim,
         U_samples = U_samples,
@@ -166,5 +182,5 @@ BM3 <- function(
         DIC = DIC,
         deviances = deviances,
         phiep_samples = phiep_samples
-    )
+    ))
 }

@@ -22,3 +22,4 @@ RoxygenNote: 7.3.3
 Imports: 
     splines,
     stats
+VignetteBuilder: knitr
