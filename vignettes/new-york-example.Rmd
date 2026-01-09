@@ -34,26 +34,30 @@ titles <- c("SSP 1-2.6", "SSP 2-4.5", "SSP 5-8.5")
 
 for (i in seq_along(scenarios)) {
   mat <- climate_models[[scenarios[i]]]
-  matplot(1:nrow(mat), mat, type = "l", lty = 1, col = "black",
-          xlab = "Year", ylab = "Value", main = titles[i])
+  matplot(1:nrow(mat), mat,
+    type = "l", lty = 1, col = "black",
+    xlab = "Year", ylab = "Value", main = titles[i]
+  )
   # Add hadcrut5_annual as red dots for overlapping years
   n_hadcrut <- length(hadcrut5_annual)
   points(1:n_hadcrut, hadcrut5_annual, col = "red", pch = 16, cex = 0.5)
-  legend("topright", legend = c("Climate Models", "HadCRUT5 Observations"),
-         col = c("black", "red"), lty = c(1, NA), pch = c(NA, 16), cex = 0.5, bty = "n")
+  legend("topright",
+    legend = c("Climate Models", "HadCRUT5 Observations"),
+    col = c("black", "red"), lty = c(1, NA), pch = c(NA, 16), cex = 0.5, bty = "n"
+  )
 }
 ```
 
 # Running the Algorithm
 
 ```{r run-algorithm}
-results = list()
+results <- list()
 for (i in seq_along(scenarios)) {
   B <- BM3(
-          Y = climate_models[[i]], z = hadcrut5_annual,
-          T = 251, T1 = 1, T2 = 173,
-          H = 2, iseed = 1, J = 6, nsim = 100
-      )
+    Y = climate_models[[i]], z = hadcrut5_annual,
+    T = 251, T1 = 1, T2 = 173,
+    H = 2, iseed = 1, J = 6, nsim = 100
+  )
   results[[scenarios[i]]] <- B
 }
 ```
@@ -63,15 +67,37 @@ for (i in seq_along(scenarios)) {
 ```{r plot-results}
 for (i in seq_along(scenarios)) {
   mat <- climate_models[[scenarios[i]]]
-  matplot(1:nrow(mat), mat, type = "l", lty = 1, col = "black",
-          xlab = "Year", ylab = "Value", main = titles[i])
+  matplot(1:nrow(mat), mat,
+    type = "l", lty = 1, col = "black",
+    xlab = "Year", ylab = "Value", main = titles[i]
+  )
   # Add hadcrut5_annual as red dots for overlapping years
   n_hadcrut <- length(hadcrut5_annual)
   points(1:n_hadcrut, hadcrut5_annual, col = "red", pch = 16, cex = 0.5)
   # Add posterior curves
-  post <- posterior_sample(results[[scenarios[i]]])
+  post <- sample_posterior(results[[scenarios[i]]])
   matlines(1:ncol(post), t(post), col = "blue")
-  legend("topright", legend = c("Climate Models", "HadCRUT5 Observations", "Posterior Samples"),
-         col = c("black", "red","blue"), lty = c(1, NA,1), pch = c(NA, 16,NA), cex = 0.5, bty = "n")
+  legend("topright",
+    legend = c("Climate Models", "HadCRUT5 Observations", "Posterior Samples"),
+    col = c("black", "red", "blue"), lty = c(1, NA, 1), pch = c(NA, 16, NA), cex = 0.5, bty = "n"
+  )
 }
+```
+
+# Simulate a new set of model and observational data
+```{r simulate-data}
+sim <- simulate_from_posterior(results[["z245c"]])
+matplot(1:nrow(sim$Y), sim$Y,
+  type = "l", lty = 1, col = "black",
+  xlab = "Year", ylab = "Value", main = titles[i]
+)
+# Add hadcrut5_annual as red dots for overlapping years
+n_hadcrut <- length(sim$y_obs_full)
+points(1:n_hadcrut, sim$y_obs_full, col = "red", pch = 16, cex = 0.5)
+# Add posterior curves
+matlines(1:nrow(sim$mu), sim$mu[, 1], col = "blue")
+legend("topright",
+  legend = c("Simulated Climate Models", "Simulated Observations", "Observation Signal"),
+  col = c("black", "red", "blue"), lty = c(1, NA, 1), pch = c(NA, 16, NA), cex = 0.5, bty = "n"
+)
 ```

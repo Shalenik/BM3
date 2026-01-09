@@ -6,7 +6,7 @@
 #' @export
 posterior_mean_curve <- function(BM3) {
     stopifnot(!is.null(BM3$ysim))
-    Y <- as.matrix(BM3$ysim[floor(nrow(BM3$ysim)/2):nrow(BM3$ysim), 2:ncol(BM3$ysim), drop = FALSE])
+    Y <- as.matrix(BM3$ysim[floor(nrow(BM3$ysim) / 2):nrow(BM3$ysim), 2:ncol(BM3$ysim), drop = FALSE])
     colMeans(Y, na.rm = TRUE)
 }
 
@@ -16,12 +16,12 @@ posterior_mean_curve <- function(BM3) {
 #' @param BM3 A BM3 object with a $ysim element.
 #' @return Numeric matrix of posterior curves.
 #' @export
-posterior_sample <- function(BM3, ncurves = NULL) {
+sample_posterior <- function(BM3, ncurves = NULL) {
     stopifnot(!is.null(BM3$ysim))
     if (is.null(ncurves)) {
         ncurves <- nrow(BM3$ysim) / 2
     }
-    indices = sample(floor(nrow(BM3$ysim)/2):nrow(BM3$ysim), ncurves)
+    indices <- sample(floor(nrow(BM3$ysim) / 2):nrow(BM3$ysim), ncurves)
     Y <- as.matrix(BM3$ysim[indices, 2:ncol(BM3$ysim), drop = FALSE])
     Y
 }

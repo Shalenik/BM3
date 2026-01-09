@@ -1,1 +1,4 @@
 exportPattern("^[[:alpha:]]+")
+export(BM3)
+export(simulate_from_posterior)
+export(sample_posterior)
