@@ -56,16 +56,11 @@ for (i in seq_along(scenarios)) {
       )
   results[[scenarios[i]]] <- B
 }
-#devtools::install(build_vignettes = TRUE)
-#browseVignettes("BM3")
 ```
 
 # View Results
 
 ```{r plot-results}
-post <- posterior_sample(results[[1]])
-print(dim(post))
-
 for (i in seq_along(scenarios)) {
   mat <- climate_models[[scenarios[i]]]
   matplot(1:nrow(mat), mat, type = "l", lty = 1, col = "black",
