@@ -1,4 +1,7 @@
 exportPattern("^[[:alpha:]]+")
-export(BM3)
+export(BFACT)
 export(simulate_from_posterior)
 export(sample_posterior)
+export(plot_data_with_posterior)
+export(find_elbow)
+export(plot_normalized_metrics)

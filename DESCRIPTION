@@ -1,4 +1,4 @@
-Package: BM3
+Package: BFACT
 Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
@@ -15,7 +15,11 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 Suggests: 
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    ggplot2,
+    ncdf4
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

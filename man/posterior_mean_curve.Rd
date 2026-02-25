@@ -4,14 +4,14 @@
 \alias{posterior_mean_curve}
 \title{Compute Posterior Mean Curve}
 \usage{
-posterior_mean_curve(BM3)
+posterior_mean_curve(BFACT)
 }
 \arguments{
-\item{BM3}{A BM3 object with a $ysim element.}
+\item{BFACT}{A BFACT object with a $ysim element.}
 }
 \value{
 Numeric vector of posterior means.
 }
 \description{
-Returns the posterior mean curve from a BM3 object.
+Returns the posterior mean curve from a BFACT object.
 }

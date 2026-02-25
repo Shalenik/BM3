@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(BM3)
+library(BFACT)
 
-test_check("BM3")
+test_check("BFACT")

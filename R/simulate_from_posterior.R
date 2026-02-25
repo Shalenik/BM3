@@ -1,7 +1,7 @@
-#' Simulate Data from a Posterior Draw of a Fitted BM3 Object
+#' Simulate Data from a Posterior Draw of a Fitted BFACT Object
 #'
-#' Generates a simulated dataset from a single posterior draw of a fitted BM3 object.
-#' @param fit A fitted BM3 object (as returned by BM3()).
+#' Generates a simulated dataset from a single posterior draw of a fitted BFACT object.
+#' @param fit A fitted BFACT object (as returned by BFACT()).
 #' @param s Integer index of the posterior draw to use (default: random draw).
 #' @param years_start First year (default: 1850).
 #' @param years_end Last year (default: 2100).
@@ -36,7 +36,7 @@ simulate_from_posterior <- function(
     if (T_post != T) stop("Time length mismatch: posterior T=", T_post, " but years imply T=", T)
     if (T2 < 1 || T2 > T) stop("Invalid T2: ", T2, " (must be between 1 and T=", T, ")")
     if (OBS_COL < 1 || OBS_COL > K) stop("Invalid OBS_COL: ", OBS_COL, " (K=", K, ")")
-    if (is.null(s)) s <- sample.int(S, 1)
+    if (is.null(s)) s <- sample(floor(S / 2):S, 1)
     beta_s <- beta_all[s, , , drop = TRUE]
     u_s <- u_all[s, , , drop = TRUE]
     phi_s <- phi_all[s, , drop = TRUE]
