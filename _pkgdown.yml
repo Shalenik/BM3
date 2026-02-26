@@ -7,7 +7,7 @@ reference:
     desc: "Core BFACT modeling functions"
     contents:
       - BFACT
-      - simulate_from_posterior
+      - fit_bfact_model
       
   - title: "Model Selection"
     desc: "Tools for selecting optimal model complexity"
@@ -15,17 +15,30 @@ reference:
       - find_elbow
       - consolidate_results
       
+  - title: "Data Preprocessing"
+    desc: "Outlier detection and data cleaning"
+    contents:
+      - detect_outliers
+      - mean_sd_threshold
+      
   - title: "Visualization"
     desc: "Plotting functions"
     contents:
       - plot_data_with_posterior
       - plot_normalized_metrics
+      - plot_posterior
+      - plot_comparison
+      - plot_timewise
+      - plot_replicate_averages
+      - plot_posterior_variance
       - posterior_mean_curve
       
   - title: "Simulation"
-    desc: "Data generation functions"
+    desc: "Data generation and posterior sampling"
     contents:
       - simulate_data
+      - simulate_from_posterior
+      - sample_posterior
 
 articles:
   - title: "Getting Started"
@@ -37,5 +50,4 @@ articles:
     navbar: ~
     contents:
       - 02-posterior-simulation
-      - 03-generate-plots
-      - 04-multiple-replicates
+      - 03-multiple-replicates

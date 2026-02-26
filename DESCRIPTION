@@ -14,6 +14,8 @@ Description: More about what it does (maybe more than one line).
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+URL: https://shalenik.github.io/BM3/
+BugReports: https://github.com/shalenik/BM3/issues
 Suggests: 
     testthat (>= 3.0.0),
     knitr,

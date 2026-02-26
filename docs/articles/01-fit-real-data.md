@@ -1,39 +1,25 @@
----
-title: "Fitting BFACT to Real Climate Data"
-author: "BFACT Package"
-date: "2026-02-22"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Fitting BFACT to Real Climate Data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-    echo = TRUE,
-    eval = TRUE,
-    message = TRUE,
-    warning = FALSE
-)
-```
-
 # Fitting BFACT to Real Climate Data
 
-This vignette demonstrates the complete workflow for fitting the BFACT model to real climate data, using New York temperature anomalies as an example.
+## Fitting BFACT to Real Climate Data
 
-## Introduction
+This vignette demonstrates the complete workflow for fitting the BFACT
+model to real climate data, using New York temperature anomalies as an
+example.
 
-The BFACT package includes real climate data from:
-- **Climate Models**: Temperature anomalies from CMIP6 models for 3 SSP scenarios (1850-2100)
-- **Observations**: HadCRUT5 annual temperature anomalies (1850-2022)
-- **Location**: New York region, summer (JJA) seasonal averages
+### Introduction
 
-This vignette demonstrates model fitting on a smaller scale. 
+The BFACT package includes real climate data from: - **Climate Models**:
+Temperature anomalies from CMIP6 models for 3 SSP scenarios
+(1850-2100) - **Observations**: HadCRUT5 annual temperature anomalies
+(1850-2022) - **Location**: New York region, summer (JJA) seasonal
+averages
 
-## Load Real Climate Data
+This vignette demonstrates model fitting on a smaller scale.
 
-```{r load-data}
+### Load Real Climate Data
+
+``` r
+
 library(BFACT)
 library(ncdf4)
 library(patchwork)
@@ -71,14 +57,23 @@ nc_close(nc_data)
 
 # Data summary
 cat("Climate model dimensions:", dim(climate_models$z126c), "\n")
+```
+
+    ## Climate model dimensions: 251 19
+
+``` r
+
 cat("HadCRUT5 observations:", length(hadcrut5_annual), "years\n")
 ```
 
-## Visualize Data
+    ## HadCRUT5 observations: 173 years
 
-Plot the climate models and observations to see what we're working with:
+### Visualize Data
 
-```{r plot-data}
+Plot the climate models and observations to see what we’re working with:
+
+``` r
+
 par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
 scenarios <- c("z126c", "z245c", "z585c")
 titles <- c("SSP 1-2.6", "SSP 2-4.5", "SSP 5-8.5")
@@ -100,11 +95,17 @@ for (i in seq_along(scenarios)) {
 }
 ```
 
-## Prune Data for Model Fitting
+![](01-fit-real-data_files/figure-html/plot-data-1.png)
 
-There are two climate models that are clear outliers in all scenarios. We apply an outlier detection method to identify and remove these models before fitting the BFACT model. This step is performed indpendently for each scenario.
+### Prune Data for Model Fitting
 
-```{r prune-data}
+There are two climate models that are clear outliers in all scenarios.
+We apply an outlier detection method to identify and remove these models
+before fitting the BFACT model. This step is performed indpendently for
+each scenario.
+
+``` r
+
 # Apply outlier detection to each scenario and prune
 pruned_climate_models <- list()
 outlier_models <- list()
@@ -122,7 +123,25 @@ for (i in seq_along(scenarios)) {
 }
 
 cat("Outliers by scenario:\n")
+```
+
+    ## Outliers by scenario:
+
+``` r
+
 print(outlier_models)
+```
+
+    ## $z126c
+    ## [1] "CIESM"       "UKESM1-0-LL"
+    ## 
+    ## $z245c
+    ## [1] "CIESM"       "UKESM1-0-LL"
+    ## 
+    ## $z585c
+    ## [1] "CIESM"       "UKESM1-0-LL"
+
+``` r
 
 # Use pruned data for downstream fitting
 climate_models <- pruned_climate_models
@@ -144,11 +163,16 @@ for (i in seq_along(scenarios)) {
 }
 ```
 
-## Fit BFACT Models
+![](01-fit-real-data_files/figure-html/prune-data-1.png)![](01-fit-real-data_files/figure-html/prune-data-2.png)![](01-fit-real-data_files/figure-html/prune-data-3.png)
 
-Fit the BFACT model for each SSP scenario. This demonstration uses 100 MCMC iterations for speed; the full analysis in the paper uses 10000 iterations. Here we fit just H=2 for simplicity.
+### Fit BFACT Models
 
-```{r fit-models}
+Fit the BFACT model for each SSP scenario. This demonstration uses 100
+MCMC iterations for speed; the full analysis in the paper uses 10000
+iterations. Here we fit just H=2 for simplicity.
+
+``` r
+
 # Fit BFACT for each SSP scenario
 # Note: Using reduced parameters for demonstration
 # Paper uses: H=2:7, nsim=10000
@@ -174,16 +198,28 @@ for (i in seq_along(scenarios)) {
 }
 ```
 
-- `nsim`: Number of MCMC iterations (100 here for speed, 10000 in the paper)
+    ## 
+    ## === Fitting SSP 1-2.6 ===
+    ## Completed fit for SSP 1-2.6
+    ## 
+    ## === Fitting SSP 2-4.5 ===
+    ## Completed fit for SSP 2-4.5
+    ## 
+    ## === Fitting SSP 5-8.5 ===
+    ## Completed fit for SSP 5-8.5
+
+- `nsim`: Number of MCMC iterations (100 here for speed, 10000 in the
+  paper)
 - `J`: Burnin iterations
 - `H`: Basis functions (2-7 in full analysis)
 - Each fit at H=2 with 100 iterations takes ~1-2 seconds
 
-## Visualize Posterior Results
+### Visualize Posterior Results
 
 Plot the posterior samples against the observations and models:
 
-```{r plot-results}
+``` r
+
 # Generate plots for each scenario
 plots <- list()
 
@@ -211,3 +247,4 @@ combined_plot <- plots[[1]] / plots[[2]] / plots[[3]]
 print(combined_plot)
 ```
 
+![](01-fit-real-data_files/figure-html/plot-results-1.png)

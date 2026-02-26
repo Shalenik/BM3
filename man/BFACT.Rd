@@ -58,8 +58,7 @@ BFACT(
 \item{a2}{Gamma shape for shrinkage delta_{>=2}. Default 3.}
 }
 \value{
-A list with elements: X, ysim, U_samples, beta_samples, gamma_samples,
-deviances, phiep_samples.
+A list with elements: X, ysim, U_samples, beta_samples, gamma_samples
 }
 \description{
 Runs a Gibbs sampler to estimate latent factor trajectories U, spline
