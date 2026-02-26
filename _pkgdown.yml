@@ -42,12 +42,10 @@ reference:
 
 articles:
   - title: "Getting Started"
-    navbar: ~
     contents:
       - 01-fit-real-data
       
   - title: "Advanced Usage"
-    navbar: ~
     contents:
       - 02-posterior-simulation
       - 03-multiple-replicates
