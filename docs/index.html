@@ -49,6 +49,95 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="bfact">BFACT<a class="anchor" aria-label="anchor" href="#bfact"></a>
 </h1></div>
+<!-- badges: start -->
+<!-- badges: end -->
+<p>Bayesian Factor Analysis of Climate Trends (BFACT) is an R package for modeling climate data using Bayesian methods with latent factor structures.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>You can install the development version of BFACT from GitHub:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Shalenik/BM3"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+</h2>
+<ul>
+<li>
+<strong>Bayesian Factor Analysis</strong>: Fit BFACT models to climate data with customizable latent factors</li>
+<li>
+<strong>Model Selection</strong>: Tools for selecting optimal model complexity using elbow detection</li>
+<li>
+<strong>Outlier Detection</strong>: Robust methods for identifying and removing outlier climate models</li>
+<li>
+<strong>Visualization</strong>: Comprehensive plotting functions for results and diagnostics</li>
+<li>
+<strong>Posterior Simulation</strong>: Generate and analyze posterior samples</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="getting-started">Getting Started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h2>
+<p>See the vignettes for detailed examples:</p>
+<ul>
+<li>
+<a href="articles/01-fit-real-data.html">Fitting BFACT to Real Climate Data</a> - Learn how to fit the BFACT model to real temperature anomaly data</li>
+<li>
+<a href="articles/02-posterior-simulation.html">Generate Posterior Simulations</a> - Work with posterior samples and synthetic data generation</li>
+<li>
+<a href="articles/03-multiple-replicates.html">Model Selection Across Multiple Replications</a> - Evaluate model selection consistency across replications</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="quick-example">Quick Example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://shalenik.github.io/BM3/">BFACT</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Simulate data with H_true = 2 latent factors</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/simulate_data.html">simulate_data</a></span><span class="op">(</span>H_true <span class="op">=</span> <span class="fl">2</span>, K <span class="op">=</span> <span class="fl">20</span>, T_obs <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Fit BFACT model with H = 2</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fit_bfact_model.html">fit_bfact_model</a></span><span class="op">(</span><span class="va">sim</span>, H <span class="op">=</span> <span class="fl">2</span>, nsim <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Extract posterior mean curve</span></span>
+<span><span class="va">post_mean</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/posterior_mean_curve.html">posterior_mean_curve</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Plot results</span></span>
+<span><span class="fu"><a href="reference/plot_data_with_posterior.html">plot_data_with_posterior</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">Y</span>, <span class="va">sim</span><span class="op">$</span><span class="va">z</span>, </span>
+<span>                        posterior_samples <span class="op">=</span> <span class="fu"><a href="reference/sample_posterior.html">sample_posterior</a></span><span class="op">(</span><span class="va">fit</span>, ncurves <span class="op">=</span> <span class="fl">50</span><span class="op">)</span>,</span>
+<span>                        title <span class="op">=</span> <span class="st">"BFACT Fit"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+</h2>
+<ul>
+<li>
+<code><a href="reference/BFACT.html">BFACT()</a></code> - Core Bayesian factor analysis function</li>
+<li>
+<code><a href="reference/fit_bfact_model.html">fit_bfact_model()</a></code> - Convenient wrapper for model fitting</li>
+<li>
+<code><a href="reference/consolidate_results.html">consolidate_results()</a></code> - Aggregate results across multiple H values</li>
+<li>
+<code><a href="reference/find_elbow.html">find_elbow()</a></code> - Identify optimal model complexity</li>
+<li>
+<code><a href="reference/detect_outliers.html">detect_outliers()</a></code> - Remove outlier climate models</li>
+<li>
+<code><a href="reference/simulate_data.html">simulate_data()</a></code> - Generate synthetic data for testing</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>If you use BFACT in your research, please cite:</p>
+<pre><code>[Citation information to be added]</code></pre>
+</div>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
+<p>[License information to be added]</p>
+</div>
 </div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
