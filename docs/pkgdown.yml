@@ -2,5 +2,10 @@ pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  new-york-example: new-york-example.html
-last_built: 2026-02-21T00:40Z
+  01-fit-real-data: 01-fit-real-data.html
+  02-posterior-simulation: 02-posterior-simulation.html
+  03-multiple-replicates: 03-multiple-replicates.html
+last_built: 2026-02-26T18:35Z
+urls:
+  reference: https://shalenik.github.io/BM3/reference
+  article: https://shalenik.github.io/BM3/articles
