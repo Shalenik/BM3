@@ -36,18 +36,18 @@ This vignette demonstrates model fitting on a smaller scale.
 ```{r load-data}
 library(BFACT)
 library(ncdf4)
+library(patchwork)
 
 # Load NetCDF file containing New York temperature anomalies
 nc_file <- system.file("data", "NewYork_temperature_anomalies_JJA_all_models_1961-1990baseline.nc", package = "BFACT")
-nc <- nc_open(nc_file)
+nc_data <- nc_open(nc_file)
 
 # Extract temperature data: dimensions are [lon, lat, year, scenario, model]
-temp_data <- ncvar_get(nc, "temperature")
-years <- ncvar_get(nc, "year")
-models <- ncvar_get(nc, "model")
-
+temp_data <- ncvar_get(nc_data, "temperature")
+years <- ncvar_get(nc_data, "year")
+models <- ncvar_get(nc_data, "model")
 # Spatially average across lon and lat for each year, scenario, and model
-# Result: [year, scenario, model] = [251, 3, 22]
+# Result: [year, scenario, model] = [251, 3, 19]
 temp_avg <- apply(temp_data, c(3, 4, 5), mean, na.rm = TRUE)
 
 # Extract data for each SSP scenario
@@ -82,6 +82,50 @@ Plot the climate models and observations to see what we're working with:
 par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
 scenarios <- c("z126c", "z245c", "z585c")
 titles <- c("SSP 1-2.6", "SSP 2-4.5", "SSP 5-8.5")
+
+for (i in seq_along(scenarios)) {
+    mat <- climate_models[[scenarios[i]]]
+    matplot(1:nrow(mat), mat,
+        type = "l", lty = 1, col = "gray70",
+        xlab = "Year", ylab = "Temperature Anomaly", main = titles[i],
+        ylim = range(c(mat, hadcrut5_annual), na.rm = TRUE)
+    )
+    # Add HadCRUT5 observations as red line for overlapping years
+    n_hadcrut <- length(hadcrut5_annual)
+    lines(1:n_hadcrut, hadcrut5_annual, col = "red", lwd = 2)
+    legend("topright",
+        legend = c("Climate Models", "HadCRUT5 Observations"),
+        col = c("gray70", "red"), lty = c(1, 1), cex = 0.8, bty = "n"
+    )
+}
+```
+
+## Prune Data for Model Fitting
+
+There are two climate models that are clear outliers in all scenarios. We apply an outlier detection method to identify and remove these models before fitting the BFACT model. This step is performed indpendently for each scenario.
+
+```{r prune-data}
+# Apply outlier detection to each scenario and prune
+pruned_climate_models <- list()
+outlier_models <- list()
+
+for (i in seq_along(scenarios)) {
+    mat <- climate_models[[scenarios[i]]]
+    outlier_models[[scenarios[i]]] <- BFACT::detect_outliers(
+        data = mat,
+        start_index = 1,
+        end_index = nrow(mat),
+        threshold_fn = BFACT::mean_sd_threshold,
+        threshold_dial = 2.5
+    )
+    pruned_climate_models[[scenarios[i]]] <- mat[, !colnames(mat) %in% outlier_models[[scenarios[i]]], drop = FALSE]
+}
+
+cat("Outliers by scenario:\n")
+print(outlier_models)
+
+# Use pruned data for downstream fitting
+climate_models <- pruned_climate_models
 
 for (i in seq_along(scenarios)) {
     mat <- climate_models[[scenarios[i]]]
@@ -140,8 +184,6 @@ for (i in seq_along(scenarios)) {
 Plot the posterior samples against the observations and models:
 
 ```{r plot-results}
-library(patchwork)
-
 # Generate plots for each scenario
 plots <- list()
 

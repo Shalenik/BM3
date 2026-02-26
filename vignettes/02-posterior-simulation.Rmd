@@ -43,10 +43,28 @@ nc_file <- system.file("data", "NewYork_temperature_anomalies_JJA_all_models_196
 nc <- nc_open(nc_file)
 
 temp_data <- ncvar_get(nc, "temperature")
+years <- ncvar_get(nc, "year")
+models <- ncvar_get(nc, "model")
 temp_avg <- apply(temp_data, c(3, 4, 5), mean, na.rm = TRUE)
 
 # Use SSP 5-8.5 (highest warming scenario)
-Y_real <- temp_avg[, 3, ] # 251 years x 22 models
+Y_real <- temp_avg[, 3, ]
+
+# Add model names as column names - this is necessary for outlier detection and later analysis
+colnames(Y_real) <- models
+
+# Remove outlier models
+outliers <- BFACT::detect_outliers(
+    data = Y_real,
+    start_index = 1,
+    end_index = nrow(Y_real),
+    threshold_fn = BFACT::mean_sd_threshold,
+    threshold_dial = 2.5
+)
+if (length(outliers) > 0) {
+    cat("Removed outlier models:", paste(outliers, collapse = ", "), "\n")
+    Y_real <- Y_real[, !colnames(Y_real) %in% outliers, drop = FALSE]
+}
 
 hadcrut_file <- system.file("data", "hadcrut5_annual.rds", package = "BFACT")
 z_real <- readRDS(hadcrut_file)
@@ -123,6 +141,32 @@ for (H in H_fit_range) {
 cat("Completed fits for H=2:5\n")
 ```
 
+### Plotting Posterior Fits
+
+```{r plot-posterior-fits-grid}
+library(patchwork)
+
+# Generate posterior fit plots for each H
+plots_H <- list()
+
+for (H in H_fit_range) {
+    fit <- fits_posterior[[as.character(H)]]
+    
+    plots_H[[as.character(H)]] <- plot_data_with_posterior(
+        Y = sim_posterior$Y,
+        z = sim_posterior$z,
+        posterior_samples = sample_posterior(fit),
+        title = sprintf("H = %d", H),
+        years = sim_posterior$years,
+        obs_years = sim_posterior$T1:sim_posterior$T2
+    )
+}
+
+# Combine plots in grid
+grid_plot <- plots_H[[1]] / plots_H[[2]] / plots_H[[3]] / plots_H[[4]]
+print(grid_plot)
+```
+
 ## Step 3: Model Sensitivity to H
 
 Compute RMSE for each H value and assess.
@@ -133,36 +177,9 @@ out <- consolidate_results(fits_posterior, sim_posterior)
 cat("\nModel comparison (RMSE on synthetic data):\n")
 print(out$model_comparison)
 
-# Find best H using elbow method
-elbow_H <- find_elbow(out$model_comparison$H, out$model_comparison$RMSE, minimize = TRUE)
+# Find best H using RMSE
 best_H <- out$model_comparison$H[which.min(out$model_comparison$RMSE)]
 cat(sprintf("\nBest H by RMSE: %d\n", best_H))
-cat(sprintf("Elbow point: H = %d\n", elbow_H))
 cat(sprintf("True H: %d\n", sim_posterior$H_true))
-
-# Build a model comparison table with posterior variance metrics
-calc_post_vars <- function(fit) {
-    ysim_mat <- as.matrix(fit$ysim)
-    burn_start <- floor(nrow(ysim_mat) / 2) + 1
-    pred_mat <- ysim_mat[burn_start:nrow(ysim_mat), -1, drop = FALSE]
-    vars <- apply(pred_mat, 2, var, na.rm = TRUE)
-    list(mean_post_var = mean(vars, na.rm = TRUE), max_post_var = max(vars, na.rm = TRUE))
-}
-
-post_var_tbl <- lapply(fits_posterior, calc_post_vars)
-post_var_df <- tibble::tibble(
-    H = as.integer(names(fits_posterior)),
-    mean_post_var = vapply(post_var_tbl, function(x) x$mean_post_var, numeric(1)),
-    max_post_var = vapply(post_var_tbl, function(x) x$max_post_var, numeric(1))
-)
-
-model_comp_full <- out$model_comparison %>%
-    dplyr::left_join(post_var_df, by = "H")
-
-# Plot normalized overlay with elbow detection
-p_norm <- plot_normalized_metrics(
-    model_comp_full,
-    title = "Normalized RMSE and Posterior Variance Metrics"
-)
-print(p_norm)
 ```
+

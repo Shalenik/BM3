@@ -239,12 +239,31 @@ consolidate_results <- function(fits, sim, by_replicate = FALSE) {
             )
     })
 
-    # Model comparison metrics
+
+    # Compute posterior variance metrics for each fit (after burn-in)
+    calc_post_vars <- function(fit) {
+        if (!is.null(fit$ysim)) {
+            ysim_mat <- as.matrix(fit$ysim)
+            burn_start <- floor(nrow(ysim_mat) / 2) + 1
+            pred_mat <- ysim_mat[burn_start:nrow(ysim_mat), -1, drop = FALSE]
+            vars <- apply(pred_mat, 2, stats::var, na.rm = TRUE)
+            return(list(
+                mean_post_var = mean(vars, na.rm = TRUE),
+                max_post_var = max(vars, na.rm = TRUE)
+            ))
+        }
+        list(mean_post_var = NA_real_, max_post_var = NA_real_)
+    }
+
+    post_var_tbl <- lapply(fits, calc_post_vars)
+
     model_comparison <- tibble::tibble(
         H = H_values,
-        RMSE = sapply(fits, function(f) compute_rmse(get_posterior_summary(f)))
+        RMSE = sapply(fits, function(f) compute_rmse(get_posterior_summary(f))),
+        mean_post_var = vapply(post_var_tbl, function(x) x$mean_post_var, numeric(1)),
+        max_post_var = vapply(post_var_tbl, function(x) x$max_post_var, numeric(1))
     ) %>%
-        dplyr::arrange(RMSE)
+        dplyr::arrange(H)
 
     result <- list(
         timewise_summaries = timewise_summaries,

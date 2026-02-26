@@ -1,0 +1,190 @@
+---
+title: "Model Selection Across Multiple Replications"
+author: "BFACT Package"
+date: "2026-02-23"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Model Selection Across Multiple Replications}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    eval = TRUE,
+    message = TRUE,
+    warning = FALSE
+)
+```
+
+# Model Selection Across Multiple Replications
+
+This vignette demonstrates how to assess model selection performance (finding the true H) across multiple independent replications of the data. This is a key demonstration for the BFACT paper: showing that the method can reliably identify the true number of latent factors across different random realizations.
+
+## Overview
+
+We will:
+1. Generate synthetic data with known true H value
+2. Create 3 independent replications 
+3. Fit BFACT with H=2 - H=4 to each replicate
+4. Aggregate results across replications using `consolidate_results()`
+5. Show summary statistics on model selection
+
+## Step 1: Load Package and Data
+
+```{r load-packages}
+library(BFACT)
+library(ggplot2)
+library(dplyr)
+library(ncdf4)
+library(patchwork)
+```
+
+## Step 2: Generate Multiple Replications
+
+We'll generate 5 replications of synthetic data from a true H=2 model, using different random seeds:
+
+```{r generate-replications}
+# Generate synthetic data from real posterior
+nc_file <- system.file("data", "NewYork_temperature_anomalies_JJA_all_models_1961-1990baseline.nc", package = "BFACT")
+nc <- nc_open(nc_file)
+temp_data <- ncvar_get(nc, "temperature")
+years <- ncvar_get(nc, "year")
+models <- ncvar_get(nc, "model")
+temp_avg <- apply(temp_data, c(3, 4, 5), mean, na.rm = TRUE)
+Y_real <- temp_avg[, 3, ]
+colnames(Y_real) <- models 
+# Remove outlier models
+outliers <- BFACT::detect_outliers(
+    data = Y_real,
+    start_index = 1,
+    end_index = nrow(Y_real),
+    threshold_fn = BFACT::mean_sd_threshold,
+    threshold_dial = 2.5
+)
+if (length(outliers) > 0) {
+    cat("Removed outlier models:", paste(outliers, collapse = ", "), "\n")
+    Y_real <- Y_real[, !colnames(Y_real) %in% outliers, drop = FALSE]
+}
+climate_models <- list(z585c = Y_real)
+hadcrut_file <- system.file("data", "hadcrut5_annual.rds", package = "BFACT")
+hadcrut5_annual <- readRDS(hadcrut_file)
+nc_close(nc)
+
+# Fit to real data to get a posterior draw
+cat("Fitting BFACT to real data to generate posterior...\n")
+fit_real <- BFACT(
+    Y = climate_models$z585c,
+    z = hadcrut5_annual,
+    T = nrow(climate_models$z585c),
+    T1 = 1,
+    T2 = length(hadcrut5_annual),
+    H = 2,
+    iseed = 999,
+    J = 6,
+    nsim = 100
+)
+
+# Generate 3 replications from the posterior
+n_reps <- 3
+sims_list <- list()
+for (rep in 1:n_reps) {
+    cat(sprintf("Generating replicate %d/%d...\n", rep, n_reps))
+    sim_rep <- simulate_from_posterior(
+        fit_real,
+        s = NULL, # Random sample from second half of chain
+        seed = 1000 + rep
+    )
+    sims_list[[rep]] <- sim_rep
+}
+
+cat(sprintf("Generated %d replications with H_true = 2\n", n_reps))
+```
+
+## Step 3: Fit BFACT with Multiple H Values to Each Replicate
+
+Now fit H=2, H=3, and H=4 to each replicate:
+
+```{r fit-multiple-h}
+H_values <- 2:4
+fits_list <- list()
+
+for (rep in 1:n_reps) {
+    cat(sprintf("\n=== Replicate %d/%d ===\n", rep, n_reps))
+    sim_rep <- sims_list[[rep]]
+    fits_rep <- list()
+
+    for (H in H_values) {
+        cat(sprintf("  Fitting H=%d...\n", H))
+        fit <- BFACT(
+            Y = sim_rep$Y,
+            z = sim_rep$z,
+            T = sim_rep$T,
+            T1 = sim_rep$T1,
+            T2 = sim_rep$T2,
+            H = H,
+            iseed = 2000 + rep * 100 + H,
+            J = 6,
+            nsim = 50
+        )
+        fits_rep[[as.character(H)]] <- fit
+    }
+    fits_list[[rep]] <- fits_rep
+}
+
+cat("\nCompleted all fits!\n")
+```
+
+## Step 4: Consolidate Results Across Replications
+
+Use `consolidate_results()` to aggregate across replications:
+
+```{r consolidate-replications}
+results_multi <- consolidate_results(
+    fits = fits_list,
+    sim = sims_list,
+    by_replicate = TRUE
+)
+
+# View the replicate comparison table
+cat("\n=== Model Selection Summary Across Replications ===\n")
+print(results_multi$replicate_comparison)
+```
+
+## Step 5: Identify the Elbow Point
+
+Use the elbow method to identify the optimal H value where performance plateaus:
+
+```{r elbow-identification}
+# Extract H values and mean RMSE
+H_vals <- results_multi$replicate_comparison$H
+rmse_vals <- results_multi$replicate_comparison$mean_RMSE
+
+# Find the elbow
+elbow_H <- find_elbow(H_vals, rmse_vals, minimize = TRUE)
+
+cat(sprintf("\nElbow point identified at H = %d\n", elbow_H))
+cat(sprintf(
+    "Mean RMSE at H=%d: %.4f\n", elbow_H,
+    results_multi$replicate_comparison$mean_RMSE[
+        results_multi$replicate_comparison$H == elbow_H
+    ]
+))
+```
+
+## Step 6: Visualize Model Selection Performance with Elbow
+
+Plot RMSE by H across replications with elbow point marked:
+
+```{r plot-model-selection}
+p_avg <- plot_replicate_averages(results_multi, sims_list)
+p_norm <- plot_normalized_metrics(
+    results_multi$replicate_comparison,
+    title = "Normalized RMSE and Posterior Variance Metrics (with Elbow Detection)"
+)
+p_var <- plot_posterior_variance(results_multi)
+
+combined_plot <- p_avg | p_norm | p_var
+print(combined_plot)
+```
