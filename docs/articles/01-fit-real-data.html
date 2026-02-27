@@ -30,7 +30,14 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="active nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/01-fit-real-data.html">Fitting BFACT to Real Climate Data</a></li>
+    <li><a class="dropdown-item" href="../articles/02-posterior-simulation.html">Generate Posterior Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/03-multiple-replicates.html">Model Selection Across Multiple Replications</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -66,17 +73,20 @@ Package</h4>
 <h2 id="fitting-bfact-to-real-climate-data">Fitting BFACT to Real Climate Data<a class="anchor" aria-label="anchor" href="#fitting-bfact-to-real-climate-data"></a>
 </h2>
 <p>This vignette demonstrates the complete workflow for fitting the
-BFACT model to real climate data, using New York temperature anomalies
-as an example.</p>
+BFACT model to climate data, using New York temperature anomalies as an
+example.</p>
 <div class="section level3">
 <h3 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h3>
-<p>The BFACT package includes real climate data from: - <strong>Climate
-Models</strong>: Temperature anomalies from CMIP6 models for 3 SSP
-scenarios (1850-2100) - <strong>Observations</strong>: HadCRUT5 annual
-temperature anomalies (1850-2022) - <strong>Location</strong>: New York
-region, summer (JJA) seasonal averages</p>
-<p>This vignette demonstrates model fitting on a smaller scale.</p>
+<p>The BFACT package utilizes climate data from:</p>
+<ul>
+<li><p><strong>Climate Models</strong>: Temperature anomalies from CMIP6
+models for 3 SSP scenarios (1850-2100)</p></li>
+<li><p><strong>Observations</strong>: HadCRUT5 annual temperature
+anomalies (1850-2022)</p></li>
+<li><p><strong>Location</strong>: This example looks at the New York
+region, summer (JJA) seasonal averages</p></li>
+</ul>
 </div>
 <div class="section level3">
 <h3 id="load-real-climate-data">Load Real Climate Data<a class="anchor" aria-label="anchor" href="#load-real-climate-data"></a>
@@ -144,7 +154,7 @@ with:</p>
 <span>    <span class="co"># Add HadCRUT5 observations as red line for overlapping years</span></span>
 <span>    <span class="va">n_hadcrut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">hadcrut5_annual</span><span class="op">)</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_hadcrut</span>, <span class="va">hadcrut5_annual</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
 <span>        legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Climate Models"</span>, <span class="st">"HadCRUT5 Observations"</span><span class="op">)</span>,</span>
 <span>        col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gray70"</span>, <span class="st">"red"</span><span class="op">)</span>, lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex <span class="op">=</span> <span class="fl">0.8</span>, bty <span class="op">=</span> <span class="st">"n"</span></span>
 <span>    <span class="op">)</span></span>
@@ -189,6 +199,7 @@ indpendently for each scenario.</p>
 <span><span class="co">## [1] "CIESM"       "UKESM1-0-LL"</span></span></code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Use pruned data for downstream fitting</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">1</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">climate_models</span> <span class="op">&lt;-</span> <span class="va">pruned_climate_models</span></span>
 <span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">scenarios</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -201,12 +212,12 @@ indpendently for each scenario.</p>
 <span>    <span class="co"># Add HadCRUT5 observations as red line for overlapping years</span></span>
 <span>    <span class="va">n_hadcrut</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">hadcrut5_annual</span><span class="op">)</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/graphics/lines.html" class="external-link">lines</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_hadcrut</span>, <span class="va">hadcrut5_annual</span>, col <span class="op">=</span> <span class="st">"red"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
 <span>        legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Climate Models"</span>, <span class="st">"HadCRUT5 Observations"</span><span class="op">)</span>,</span>
 <span>        col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gray70"</span>, <span class="st">"red"</span><span class="op">)</span>, lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, cex <span class="op">=</span> <span class="fl">0.8</span>, bty <span class="op">=</span> <span class="st">"n"</span></span>
 <span>    <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p><img src="01-fit-real-data_files/figure-html/prune-data-1.png" class="r-plt" alt="" width="700"><img src="01-fit-real-data_files/figure-html/prune-data-2.png" class="r-plt" alt="" width="700"><img src="01-fit-real-data_files/figure-html/prune-data-3.png" class="r-plt" alt="" width="700"></p>
+<p><img src="01-fit-real-data_files/figure-html/prune-data-1.png" class="r-plt" alt="" width="700"></p>
 </div>
 <div class="section level3">
 <h3 id="fit-bfact-models">Fit BFACT Models<a class="anchor" aria-label="anchor" href="#fit-bfact-models"></a>
@@ -229,9 +240,9 @@ iterations. Here we fit just H=2 for simplicity.</p>
 <span>        T <span class="op">=</span> <span class="fl">251</span>, <span class="co"># Total time points</span></span>
 <span>        T1 <span class="op">=</span> <span class="fl">1</span>, <span class="co"># Start of climate model data</span></span>
 <span>        T2 <span class="op">=</span> <span class="fl">173</span>, <span class="co"># End of observation data</span></span>
-<span>        H <span class="op">=</span> <span class="fl">2</span>, <span class="co"># Basis dimension (paper fits 2:7)</span></span>
+<span>        H <span class="op">=</span> <span class="fl">2</span>, <span class="co"># Latent factor dimension (paper fits 2:7)</span></span>
 <span>        iseed <span class="op">=</span> <span class="fl">123</span> <span class="op">+</span> <span class="va">i</span>, <span class="co"># Different seed for each scenario</span></span>
-<span>        J <span class="op">=</span> <span class="fl">6</span>, <span class="co"># Burnin iterations</span></span>
+<span>        J <span class="op">=</span> <span class="fl">6</span>, <span class="co"># Spline basis</span></span>
 <span>        nsim <span class="op">=</span> <span class="fl">100</span> <span class="co"># MCMC iterations (paper uses 10000)</span></span>
 <span>    <span class="op">)</span></span>
 <span>    <span class="va">results</span><span class="op">[[</span><span class="va">scenarios</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">fit</span></span>
@@ -252,10 +263,9 @@ iterations. Here we fit just H=2 for simplicity.</p>
 <code>nsim</code>: Number of MCMC iterations (100 here for speed,
 10000 in the paper)</li>
 <li>
-<code>J</code>: Burnin iterations</li>
+<code>J</code>: Spline basis</li>
 <li>
-<code>H</code>: Basis functions (2-7 in full analysis)</li>
-<li>Each fit at H=2 with 100 iterations takes ~1-2 seconds</li>
+<code>H</code>: Latent factor dimension (2-7 in full analysis)</li>
 </ul>
 </div>
 <div class="section level3">
@@ -263,8 +273,15 @@ iterations. Here we fit just H=2 for simplicity.</p>
 </h3>
 <p>Plot the posterior samples against the observations and models:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Generate plots for each scenario</span></span>
+<code class="sourceCode R"><span><span class="co"># Generate plots for each scenario with shared y-axis</span></span>
 <span><span class="va">plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Calculate shared y-axis limits across all scenarios</span></span>
+<span><span class="va">all_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">scenarios</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">all_values</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">climate_models</span><span class="op">[[</span><span class="va">scenarios</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">]</span>, <span class="va">hadcrut5_annual</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">shared_ylim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">all_values</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">scenarios</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="co"># Get posterior samples</span></span>
@@ -274,15 +291,23 @@ iterations. Here we fit just H=2 for simplicity.</p>
 <span>    <span class="co"># Compute posterior means for each sample</span></span>
 <span>    <span class="va">post_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_posterior.html">sample_posterior</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span></span>
-<span>    <span class="co"># Create plot using the new function</span></span>
-<span>    <span class="va">plots</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_data_with_posterior.html">plot_data_with_posterior</a></span><span class="op">(</span></span>
+<span>    <span class="co"># Create plot using the new function with shared y-axis limits</span></span>
+<span>    <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_data_with_posterior.html">plot_data_with_posterior</a></span><span class="op">(</span></span>
 <span>        Y <span class="op">=</span> <span class="va">climate_models</span><span class="op">[[</span><span class="va">scenarios</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>        z <span class="op">=</span> <span class="va">hadcrut5_annual</span>,</span>
 <span>        posterior_samples <span class="op">=</span> <span class="va">post_samples</span>,</span>
 <span>        title <span class="op">=</span> <span class="va">titles</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>,</span>
 <span>        years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">251</span>,</span>
-<span>        obs_years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">173</span></span>
+<span>        obs_years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">173</span>,</span>
+<span>        ylim <span class="op">=</span> <span class="va">shared_ylim</span></span>
 <span>    <span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="co"># Only keep y-axis label on the middle plot</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="va">i</span> <span class="op">!=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="va">p</span> <span class="op">&lt;-</span> <span class="va">p</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>y <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span>    <span class="op">}</span></span>
+<span>    </span>
+<span>    <span class="va">plots</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">p</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># Combine plots with patchwork</span></span>

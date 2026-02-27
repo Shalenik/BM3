@@ -3,14 +3,15 @@
 ## Generate Posterior Simulations
 
 This vignette shows how to generate synthetic climate data from fitted
-posteriors, then fit BFACT to evaluate model misspecification.
+posteriors, then fit BFACT to evaluate model sensitivity.
 
-### Overview
+**Workflow**:
 
-**Workflow**: 1. Extract posterior samples from a fitted model (e.g.,
-H_true=2) 2. Generate synthetic observations from those posterior draws
-3. Fit BFACT with multiple H values (1-20) to the synthetic data 4.
-Compare fitted H vs true H to assess model misspecification
+1.  Extract posterior samples from a model fitted to real data (e.g.,
+    $`H_0 = 2`$)
+2.  Utilize parameters from these posterior samples to generate
+    synthetic climate trajectories
+3.  Fit BFACT with multiple $`H`$ values (1-20) to the synthetic data
 
 ### Step 1: Fit Real Data and Extract Posterior Samples
 
@@ -19,9 +20,23 @@ extract posterior draws. Here $`H_0 = 2`$.
 
 ``` r
 
-devtools::load_all()
 library(BFACT)
 library(ncdf4)
+library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 
 # Load real climate data (same as vignette 01)
 nc_file <- system.file("data", "NewYork_temperature_anomalies_JJA_all_models_1961-1990baseline.nc", package = "BFACT")
@@ -50,14 +65,25 @@ if (length(outliers) > 0) {
     cat("Removed outlier models:", paste(outliers, collapse = ", "), "\n")
     Y_real <- Y_real[, !colnames(Y_real) %in% outliers, drop = FALSE]
 }
+```
+
+    ## Removed outlier models: CIESM, UKESM1-0-LL
+
+``` r
 
 hadcrut_file <- system.file("data", "hadcrut5_annual.rds", package = "BFACT")
 z_real <- readRDS(hadcrut_file)
 
 nc_close(nc)
 
-# Fit BFACT to real data with H=2
-cat("Fitting BFACT to real data (H=2)...\n")
+# Fit BFACT to real data with H0=2
+cat("Fitting BFACT to real data (H0=2)...\n")
+```
+
+    ## Fitting BFACT to real data (H0=2)...
+
+``` r
+
 fit_real <- BFACT(
     Y = Y_real,
     z = z_real,
@@ -67,8 +93,13 @@ fit_real <- BFACT(
     H = 2,
     iseed = 123,
     J = 6,
-    nsim = 100 # Demonstration scale
+    nsim = 100 
 )
+```
+
+### Step 2: Generate Synthetic Data from Posterior Samples
+
+``` r
 
 # Generate synthetic data from this posterior draw
 sim_posterior <- simulate_from_posterior(
@@ -83,6 +114,11 @@ sim_posterior <- simulate_from_posterior(
 )
 
 cat("Real data fit complete. Generated synthetic observations from H0=2 posterior.\n")
+```
+
+    ## Real data fit complete. Generated synthetic observations from H0=2 posterior.
+
+``` r
 
 # Plot simulated data with true trend
 p_sim <- plot_data_with_posterior(
@@ -93,10 +129,12 @@ p_sim <- plot_data_with_posterior(
     years = sim_posterior$years,
     obs_years = sim_posterior$T1:sim_posterior$T2
 )
-print(p_sim)
+p_sim
 ```
 
-### Step 2: Fit Multiple H Values to Synthetic Data
+![](02-posterior-simulation_files/figure-html/unnamed-chunk-1-1.png)
+
+### Step 3: Fit Multiple H Values to Synthetic Data
 
 Now fit BFACT with $`H \in 2,\ldots,5`$ to evaluate model sensitivity:
 
@@ -118,14 +156,28 @@ for (H in H_fit_range) {
         H = H,
         iseed = 123 + H,
         J = 6,
-        nsim = 100 # Demonstration scale
+        nsim = 100 
     )
 
     fits_posterior[[as.character(H)]] <- fit
 }
+```
+
+    ## 
+    ## Fitting H=2 to synthetic data from H=2 posterior...
+    ## 
+    ## Fitting H=3 to synthetic data from H=2 posterior...
+    ## 
+    ## Fitting H=4 to synthetic data from H=2 posterior...
+    ## 
+    ## Fitting H=5 to synthetic data from H=2 posterior...
+
+``` r
 
 cat("Completed fits for H=2:5\n")
 ```
+
+    ## Completed fits for H=2:5
 
 #### Plotting Posterior Fits
 
@@ -147,6 +199,11 @@ for (H in H_fit_range) {
         years = sim_posterior$years,
         obs_years = sim_posterior$T1:sim_posterior$T2
     )
+
+    # Only keep y-axis label on the middle plot
+    if (H != 3) {
+        plots_H[[as.character(H)]] <- plots_H[[as.character(H)]] + ggplot2::labs(y = NULL)
+    }
 }
 
 # Combine plots in grid
@@ -154,19 +211,36 @@ grid_plot <- plots_H[[1]] / plots_H[[2]] / plots_H[[3]] / plots_H[[4]]
 print(grid_plot)
 ```
 
-### Step 3: Model Sensitivity to H
+![](02-posterior-simulation_files/figure-html/plot-posterior-fits-grid-1.png)
 
-Compute RMSE for each H value and assess.
+### Step 4: Model Sensitivity to H
+
+Compute RMSE for each $`H`$ value and assess.
 
 ``` r
 
 out <- consolidate_results(fits_posterior, sim_posterior)
+```
+
+    ## Consolidating 4 fit(s)...
+
+``` r
 
 cat("\nModel comparison (RMSE on synthetic data):\n")
-print(out$model_comparison)
-
-# Find best H using RMSE
-best_H <- out$model_comparison$H[which.min(out$model_comparison$RMSE)]
-cat(sprintf("\nBest H by RMSE: %d\n", best_H))
-cat(sprintf("True H: %d\n", sim_posterior$H_true))
 ```
+
+    ## 
+    ## Model comparison (RMSE on synthetic data):
+
+``` r
+
+print(out$model_comparison)
+```
+
+    ## # A tibble: 4 × 4
+    ##       H  RMSE mean_post_var max_post_var
+    ##   <int> <dbl>         <dbl>        <dbl>
+    ## 1     2 0.239       0.0102        0.0530
+    ## 2     3 0.260       0.00960       0.0516
+    ## 3     4 0.258       0.0102        0.0483
+    ## 4     5 0.223       0.0126        0.0520

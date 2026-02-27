@@ -2,7 +2,7 @@
 title: "Generate Posterior Simulations"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{02-posterior-simulation}
+  %\VignetteIndexEntry{Generate Posterior Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -10,7 +10,7 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
     echo = TRUE,
-    eval = FALSE,
+    eval = TRUE,
     message = TRUE,
     warning = FALSE
 )
@@ -19,24 +19,22 @@ knitr::opts_chunk$set(
 # Generate Posterior Simulations
 
 This vignette shows how to generate synthetic climate data from fitted posteriors, 
-then fit BFACT to evaluate model misspecification.
-
-## Overview
+then fit BFACT to evaluate model sensitivity.
 
 **Workflow**:
-1. Extract posterior samples from a fitted model (e.g., H_true=2)
-2. Generate synthetic observations from those posterior draws
-3. Fit BFACT with multiple H values (1-20) to the synthetic data
-4. Compare fitted H vs true H to assess model misspecification
+
+1. Extract posterior samples from a model fitted to real data (e.g., $H_0 = 2$)
+2. Utilize parameters from these posterior samples to generate synthetic climate trajectories
+3. Fit BFACT with multiple $H$ values (1-20) to the synthetic data
 
 ## Step 1: Fit Real Data and Extract Posterior Samples
 
 Start by fitting BFACT to the real New York temperature data, then extract posterior draws. Here $H_0 = 2$.
 
 ```{r create-posterior-sims}
-devtools::load_all()
 library(BFACT)
 library(ncdf4)
+library(dplyr)
 
 # Load real climate data (same as vignette 01)
 nc_file <- system.file("data", "NewYork_temperature_anomalies_JJA_all_models_1961-1990baseline.nc", package = "BFACT")
@@ -71,8 +69,8 @@ z_real <- readRDS(hadcrut_file)
 
 nc_close(nc)
 
-# Fit BFACT to real data with H=2
-cat("Fitting BFACT to real data (H=2)...\n")
+# Fit BFACT to real data with H0=2
+cat("Fitting BFACT to real data (H0=2)...\n")
 fit_real <- BFACT(
     Y = Y_real,
     z = z_real,
@@ -82,9 +80,13 @@ fit_real <- BFACT(
     H = 2,
     iseed = 123,
     J = 6,
-    nsim = 100 # Demonstration scale
+    nsim = 100 
 )
+```
 
+## Step 2: Generate Synthetic Data from Posterior Samples
+
+```{r}
 # Generate synthetic data from this posterior draw
 sim_posterior <- simulate_from_posterior(
     fit = fit_real,
@@ -108,10 +110,10 @@ p_sim <- plot_data_with_posterior(
     years = sim_posterior$years,
     obs_years = sim_posterior$T1:sim_posterior$T2
 )
-print(p_sim)
+p_sim
 ```
 
-## Step 2: Fit Multiple H Values to Synthetic Data
+## Step 3: Fit Multiple H Values to Synthetic Data
 
 Now fit BFACT with $H \in 2,\ldots,5$ to evaluate model sensitivity:
 
@@ -132,7 +134,7 @@ for (H in H_fit_range) {
         H = H,
         iseed = 123 + H,
         J = 6,
-        nsim = 100 # Demonstration scale
+        nsim = 100 
     )
 
     fits_posterior[[as.character(H)]] <- fit
@@ -160,6 +162,11 @@ for (H in H_fit_range) {
         years = sim_posterior$years,
         obs_years = sim_posterior$T1:sim_posterior$T2
     )
+
+    # Only keep y-axis label on the middle plot
+    if (H != 3) {
+        plots_H[[as.character(H)]] <- plots_H[[as.character(H)]] + ggplot2::labs(y = NULL)
+    }
 }
 
 # Combine plots in grid
@@ -167,19 +174,14 @@ grid_plot <- plots_H[[1]] / plots_H[[2]] / plots_H[[3]] / plots_H[[4]]
 print(grid_plot)
 ```
 
-## Step 3: Model Sensitivity to H
+## Step 4: Model Sensitivity to H
 
-Compute RMSE for each H value and assess.
+Compute RMSE for each $H$ value and assess.
 
 ```{r analyze-recovery}
 out <- consolidate_results(fits_posterior, sim_posterior)
 
 cat("\nModel comparison (RMSE on synthetic data):\n")
 print(out$model_comparison)
-
-# Find best H using RMSE
-best_H <- out$model_comparison$H[which.min(out$model_comparison$RMSE)]
-cat(sprintf("\nBest H by RMSE: %d\n", best_H))
-cat(sprintf("True H: %d\n", sim_posterior$H_true))
 ```
 

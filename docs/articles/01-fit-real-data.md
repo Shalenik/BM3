@@ -3,18 +3,20 @@
 ## Fitting BFACT to Real Climate Data
 
 This vignette demonstrates the complete workflow for fitting the BFACT
-model to real climate data, using New York temperature anomalies as an
+model to climate data, using New York temperature anomalies as an
 example.
 
 ### Introduction
 
-The BFACT package includes real climate data from: - **Climate Models**:
-Temperature anomalies from CMIP6 models for 3 SSP scenarios
-(1850-2100) - **Observations**: HadCRUT5 annual temperature anomalies
-(1850-2022) - **Location**: New York region, summer (JJA) seasonal
-averages
+The BFACT package utilizes climate data from:
 
-This vignette demonstrates model fitting on a smaller scale.
+- **Climate Models**: Temperature anomalies from CMIP6 models for 3 SSP
+  scenarios (1850-2100)
+
+- **Observations**: HadCRUT5 annual temperature anomalies (1850-2022)
+
+- **Location**: This example looks at the New York region, summer (JJA)
+  seasonal averages
 
 ### Load Real Climate Data
 
@@ -88,7 +90,7 @@ for (i in seq_along(scenarios)) {
     # Add HadCRUT5 observations as red line for overlapping years
     n_hadcrut <- length(hadcrut5_annual)
     lines(1:n_hadcrut, hadcrut5_annual, col = "red", lwd = 2)
-    legend("topright",
+    legend("topleft",
         legend = c("Climate Models", "HadCRUT5 Observations"),
         col = c("gray70", "red"), lty = c(1, 1), cex = 0.8, bty = "n"
     )
@@ -144,6 +146,7 @@ print(outlier_models)
 ``` r
 
 # Use pruned data for downstream fitting
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
 climate_models <- pruned_climate_models
 
 for (i in seq_along(scenarios)) {
@@ -156,14 +159,14 @@ for (i in seq_along(scenarios)) {
     # Add HadCRUT5 observations as red line for overlapping years
     n_hadcrut <- length(hadcrut5_annual)
     lines(1:n_hadcrut, hadcrut5_annual, col = "red", lwd = 2)
-    legend("topright",
+    legend("topleft",
         legend = c("Climate Models", "HadCRUT5 Observations"),
         col = c("gray70", "red"), lty = c(1, 1), cex = 0.8, bty = "n"
     )
 }
 ```
 
-![](01-fit-real-data_files/figure-html/prune-data-1.png)![](01-fit-real-data_files/figure-html/prune-data-2.png)![](01-fit-real-data_files/figure-html/prune-data-3.png)
+![](01-fit-real-data_files/figure-html/prune-data-1.png)
 
 ### Fit BFACT Models
 
@@ -187,9 +190,9 @@ for (i in seq_along(scenarios)) {
         T = 251, # Total time points
         T1 = 1, # Start of climate model data
         T2 = 173, # End of observation data
-        H = 2, # Basis dimension (paper fits 2:7)
+        H = 2, # Latent factor dimension (paper fits 2:7)
         iseed = 123 + i, # Different seed for each scenario
-        J = 6, # Burnin iterations
+        J = 6, # Spline basis
         nsim = 100 # MCMC iterations (paper uses 10000)
     )
     results[[scenarios[i]]] <- fit
@@ -210,9 +213,8 @@ for (i in seq_along(scenarios)) {
 
 - `nsim`: Number of MCMC iterations (100 here for speed, 10000 in the
   paper)
-- `J`: Burnin iterations
-- `H`: Basis functions (2-7 in full analysis)
-- Each fit at H=2 with 100 iterations takes ~1-2 seconds
+- `J`: Spline basis
+- `H`: Latent factor dimension (2-7 in full analysis)
 
 ### Visualize Posterior Results
 
@@ -220,8 +222,15 @@ Plot the posterior samples against the observations and models:
 
 ``` r
 
-# Generate plots for each scenario
+# Generate plots for each scenario with shared y-axis
 plots <- list()
+
+# Calculate shared y-axis limits across all scenarios
+all_values <- list()
+for (i in seq_along(scenarios)) {
+    all_values[[i]] <- c(climate_models[[scenarios[i]]], hadcrut5_annual)
+}
+shared_ylim <- range(unlist(all_values), na.rm = TRUE)
 
 for (i in seq_along(scenarios)) {
     # Get posterior samples
@@ -231,15 +240,23 @@ for (i in seq_along(scenarios)) {
     # Compute posterior means for each sample
     post_samples <- sample_posterior(fit)
 
-    # Create plot using the new function
-    plots[[i]] <- plot_data_with_posterior(
+    # Create plot using the new function with shared y-axis limits
+    p <- plot_data_with_posterior(
         Y = climate_models[[scenarios[i]]],
         z = hadcrut5_annual,
         posterior_samples = post_samples,
         title = titles[i],
         years = 1:251,
-        obs_years = 1:173
+        obs_years = 1:173,
+        ylim = shared_ylim
     )
+    
+    # Only keep y-axis label on the middle plot
+    if (i != 2) {
+        p <- p + ggplot2::labs(y = NULL)
+    }
+    
+    plots[[i]] <- p
 }
 
 # Combine plots with patchwork

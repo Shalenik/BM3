@@ -1,8 +1,8 @@
 # BFACT
 
-Bayesian Factor Analysis of Climate Trends (BFACT) is an R package for
-modeling climate data using Bayesian methods with latent factor
-structures.
+Bayesian Factor Analysis for Climate Trajectories (BFACT) is an R
+package for modeling climate data using a Bayesian implementation of a
+latent factor model.
 
 ## Installation
 
@@ -18,12 +18,9 @@ devtools::install_github("Shalenik/BM3")
 
 - **Bayesian Factor Analysis**: Fit BFACT models to climate data with
   customizable latent factors
-- **Model Selection**: Tools for selecting optimal model complexity
-  using elbow detection
-- **Outlier Detection**: Robust methods for identifying and removing
-  outlier climate models
-- **Visualization**: Comprehensive plotting functions for results and
-  diagnostics
+
+- **Model Selection**: Tools for selecting optimal hyperparameters
+
 - **Posterior Simulation**: Generate and analyze posterior samples
 
 ## Getting Started

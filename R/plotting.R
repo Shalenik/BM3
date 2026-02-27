@@ -152,6 +152,7 @@ plot_timewise <- function(results, sim, title = NULL) {
 #' @param title Optional plot title (default NULL).
 #' @param years Optional vector of years for x-axis (default: 1:nrow(Y)).
 #' @param obs_years Indices for where observations are available (default: 1:length(z)).
+#' @param ylim Optional y-axis limits as c(min, max) (default NULL for automatic limits).
 #'
 #' @return ggplot2 object.
 #'
@@ -162,12 +163,15 @@ plot_timewise <- function(results, sim, title = NULL) {
 #'
 #' # With true trend
 #' p <- plot_data_with_posterior(Y, z, true_trend = mu, title = "Synthetic Data")
+#'
+#' # With specified y-axis limits
+#' p <- plot_data_with_posterior(Y, z, posterior_samples, ylim = c(-2, 2))
 #' }
 #'
 #' @export
 plot_data_with_posterior <- function(Y, z, posterior_samples = NULL, true_trend = NULL,
                                      title = NULL, years = NULL,
-                                     obs_years = 1:length(z)) {
+                                     obs_years = 1:length(z), ylim = NULL) {
     T <- nrow(Y)
     K <- ncol(Y)
 
@@ -198,7 +202,7 @@ plot_data_with_posterior <- function(Y, z, posterior_samples = NULL, true_trend 
         ) +
         ggplot2::geom_point(
             data = obs_df, ggplot2::aes(x = year, y = value),
-            color = "red", size = 3
+            color = "red", size = 1
         ) +
         ggplot2::theme_minimal() +
         ggplot2::labs(x = "Year", y = "Temperature Anomaly") +
@@ -221,7 +225,7 @@ plot_data_with_posterior <- function(Y, z, posterior_samples = NULL, true_trend 
         }
         p <- p + ggplot2::geom_line(
             data = post_df, ggplot2::aes(x = year, y = value, group = sample),
-            color = "blue", alpha = 0.1, linewidth = 1.5
+            color = "blue", alpha = 0.1, linewidth = 1
         )
     }
 
@@ -232,6 +236,11 @@ plot_data_with_posterior <- function(Y, z, posterior_samples = NULL, true_trend 
             data = trend_df, ggplot2::aes(x = year, y = value),
             color = "red", linewidth = 1
         )
+    }
+    
+    # Apply y-axis limits if provided
+    if (!is.null(ylim)) {
+        p <- p + ggplot2::ylim(ylim[1], ylim[2])
     }
 
     return(p)
@@ -445,14 +454,14 @@ plot_replicate_averages <- function(results_multi, sims_list,
             color = "gray70", linewidth = 0.3, alpha = 0.7
         ) +
         ggplot2::geom_line(
+            data = true_df,
+            ggplot2::aes(x = year, y = value),
+            color = "red", linewidth = .8
+        ) +
+        ggplot2::geom_line(
             data = post_df,
             ggplot2::aes(x = year, y = avg_post_mean, color = H_label),
             linewidth = 1, alpha = 0.8
-        ) +
-        ggplot2::geom_line(
-            data = true_df,
-            ggplot2::aes(x = year, y = value),
-            color = "red", linewidth = 1.2
         ) +
         ggplot2::scale_color_brewer(palette = "Set1") +
         ggplot2::theme_minimal() +

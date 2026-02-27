@@ -4,19 +4,16 @@
 
 This vignette demonstrates how to assess model selection performance
 (finding the true H) across multiple independent replications of the
-data. This is a key demonstration for the BFACT paper: showing that the
-method can reliably identify the true number of latent factors across
-different random realizations.
+data.
 
-### Overview
+We will:
 
-We will: 1. Generate synthetic data with known true H value 2. Create 3
-independent replications 3. Fit BFACT with H=2 - H=4 to each replicate
-4. Aggregate results across replications using
-[`consolidate_results()`](https://shalenik.github.io/BM3/reference/consolidate_results.md)
-5. Show summary statistics on model selection
-
-### Step 1: Load Package and Data
+1.  Generate synthetic data with known true $`H_0`$ value
+2.  Create 3 independent replications
+3.  Fit BFACT with $`H \in 2, \ldots, 4`$ to each replicate
+4.  Aggregate results across replications using
+    [`consolidate_results()`](https://shalenik.github.io/BM3/reference/consolidate_results.md)
+5.  Show summary statistics on model selection
 
 ``` r
 
@@ -42,10 +39,10 @@ library(ncdf4)
 library(patchwork)
 ```
 
-### Step 2: Generate Multiple Replications
+### Steps 1 & 2: Generate Multiple Replications
 
-We’ll generate 5 replications of synthetic data from a true H=2 model,
-using different random seeds:
+We’ll generate 3 replications of synthetic data from a true $`H_0=2`$
+model, using different random seeds:
 
 ``` r
 

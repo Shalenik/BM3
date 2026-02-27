@@ -30,7 +30,14 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="active nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/01-fit-real-data.html">Fitting BFACT to Real Climate Data</a></li>
+    <li><a class="dropdown-item" href="../articles/02-posterior-simulation.html">Generate Posterior Simulations</a></li>
+    <li><a class="dropdown-item" href="../articles/03-multiple-replicates.html">Model Selection Across Multiple Replications</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -67,21 +74,21 @@ Package</h4>
 </h2>
 <p>This vignette demonstrates how to assess model selection performance
 (finding the true H) across multiple independent replications of the
-data. This is a key demonstration for the BFACT paper: showing that the
-method can reliably identify the true number of latent factors across
-different random realizations.</p>
-<div class="section level3">
-<h3 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h3>
-<p>We will: 1. Generate synthetic data with known true H value 2. Create
-3 independent replications 3. Fit BFACT with H=2 - H=4 to each replicate
-4. Aggregate results across replications using
-<code><a href="../reference/consolidate_results.html">consolidate_results()</a></code> 5. Show summary statistics on model
-selection</p>
-</div>
-<div class="section level3">
-<h3 id="step-1-load-package-and-data">Step 1: Load Package and Data<a class="anchor" aria-label="anchor" href="#step-1-load-package-and-data"></a>
-</h3>
+data.</p>
+<p>We will:</p>
+<ol style="list-style-type: decimal">
+<li>Generate synthetic data with known true
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>0</mn></msub><annotation encoding="application/x-tex">H_0</annotation></semantics></math>
+value</li>
+<li>Create 3 independent replications</li>
+<li>Fit BFACT with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi><mo>∈</mo><mn>2</mn><mo>,</mo><mi>…</mi><mo>,</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">H \in 2, \ldots, 4</annotation></semantics></math>
+to each replicate</li>
+<li>Aggregate results across replications using
+<code><a href="../reference/consolidate_results.html">consolidate_results()</a></code>
+</li>
+<li>Show summary statistics on model selection</li>
+</ol>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://shalenik.github.io/BM3/">BFACT</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
@@ -97,11 +104,11 @@ selection</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cirrus.ucsd.edu/~pierce/ncdf/" class="external-link">ncdf4</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span></code></pre></div>
-</div>
 <div class="section level3">
-<h3 id="step-2-generate-multiple-replications">Step 2: Generate Multiple Replications<a class="anchor" aria-label="anchor" href="#step-2-generate-multiple-replications"></a>
+<h3 id="steps-1-2-generate-multiple-replications">Steps 1 &amp; 2: Generate Multiple Replications<a class="anchor" aria-label="anchor" href="#steps-1-2-generate-multiple-replications"></a>
 </h3>
-<p>We’ll generate 5 replications of synthetic data from a true H=2
+<p>We’ll generate 3 replications of synthetic data from a true
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>0</mn></msub><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">H_0=2</annotation></semantics></math>
 model, using different random seeds:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate synthetic data from real posterior</span></span>
