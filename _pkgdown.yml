@@ -1,4 +1,8 @@
 url: https://shalenik.github.io/BM3/
 template:
   bootstrap: 5
+articles:
+  01-fit-real-data: 01-fit-real-data.html
+  02-posterior-simulation: 02-posterior-simulation.html
+  03-multiple-replicates: 03-multiple-replicates.html
 
